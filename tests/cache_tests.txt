@@ -1,0 +1,18 @@
+# Cache Tests
+
+cache init l1 32768 64 4
+cache init l2 262144 64 8
+cache access 128
+cache access 128
+cache stats
+
+Expected:
+
+* First access:
+  - L1 MISS
+  - L2 MISS
+* Second access:
+  - L1 HIT
+* Cache statistics reflect:
+  - L1: 1 hit, 1 miss
+  - L2: 0 hits, 1 miss

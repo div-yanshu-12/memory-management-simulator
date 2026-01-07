@@ -1,0 +1,15 @@
+# Virtual Memory Tests – Paging
+
+vm init 16384 4096
+vm access 0
+vm access 4096
+vm access 0
+vm stats
+
+Expected:
+
+* First access (0): Page fault
+* Second access (4096): Page fault
+* Third access (0): Page hit
+* Page fault count = 2
+* Page hit count = 1

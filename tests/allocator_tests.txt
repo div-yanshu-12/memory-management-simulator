@@ -1,0 +1,16 @@
+# Allocator Tests
+
+init memory 1024
+set allocator first
+malloc 100
+malloc 200
+free 1
+dump
+stats
+
+Expected:
+*One free block of 100
+*One used block of 200
+*One free block of 724
+*Used memory = 200
+*External fragmentation > 0
