@@ -5,51 +5,55 @@ Please note, the simulator separates allocation, virtual memory, and caching int
 
 1. Overview
 
-This project implements a user-space simulator for Operating System memory management concepts. It models physical memory allocation, fragmentation behavior, cache memory, and virtual memory using paging.
+This project implements a user-space simulator for core Operating System memory management concepts. It models physical memory allocation, fragmentation behavior, buddy allocation, virtual memory using paging, and a multilevel CPU cache hierarchy.
 
-The simulator is not a real operating system or kernel. All memory addresses are simulated as offsets, and timing behavior is symbolic rather than cycle-accurate.
+The simulator is not a real operating system or kernel. All memory addresses are simulated as byte offsets, and all timing behavior is symbolic rather than cycle-accurate.
 
 2. Assumptions & Simplifications
 
-The following assumptions are made to keep the simulator focused and manageable:
+To keep the simulator focused and understandable, the following assumptions are made:
 
 Memory is byte-addressable
 
 Physical memory is contiguous
 
-Single-process, single-threaded execution
+Single process, single-threaded execution
 
 No memory protection bits (read/write/execute)
 
-No TLB simulation
+No Translation Lookaside Buffer (TLB) simulation
 
 Cache and disk latency are symbolic (hit/miss counting only)
 
+Disk storage is not explicitly modeled; page faults represent disk access
 
-3. Physical Memory Model
+These simplifications are intentional and documented.
+
+3. Physical Memory Model (Linear Allocator)
 
 Physical memory is represented as a doubly linked list of memory blocks.
 
-Each block contains:
+Each block stores:
 
 Start address (byte offset)
 
-Size (in bytes)
+Size (bytes)
 
-Allocation state (free/used)
+Allocation state (free or used)
 
 Allocation ID
 
-Blocks are always maintained in sorted address order, which enables:
+Blocks are always maintained in sorted address order, enabling:
 
 Block splitting during allocation
 
 Block coalescing during deallocation
 
+This models a classical heap-style allocator.
 
 4. Dynamic Allocation Strategies
 
-The simulator supports three allocation policies. Allocation policy is separated from allocation mechanism.
+Allocation policy is separated from the allocation mechanism. The simulator supports three strategies:
 
 4.1 First Fit
 
@@ -57,7 +61,7 @@ Selects the first free block large enough to satisfy a request.
 
 Fast
 
-May cause external fragmentation near the beginning of memory
+Can cause external fragmentation near low addresses
 
 4.2 Best Fit
 
@@ -65,21 +69,21 @@ Selects the smallest free block that satisfies the request.
 
 Minimizes internal wastage
 
-Often increases external fragmentation due to small leftover blocks
+May increase external fragmentation due to small leftover blocks
 
 4.3 Worst Fit
 
 Selects the largest available free block.
 
-Leaves larger remaining free blocks
+Leaves larger free regions
 
 Higher traversal cost
 
-Block splitting and coalescing are performed automatically, independent of policy.
+Block splitting and coalescing occur automatically, independent of policy.
 
 5. Buddy Memory Allocation
 
-An independent buddy allocation system is implemented.
+An independent buddy allocator is implemented, separate from the linear allocator.
 
 Features:
 
@@ -91,7 +95,7 @@ XOR-based buddy address computation
 
 Recursive coalescing on free
 
-This allocator trades internal fragmentation for fast allocation and deterministic merging.
+This allocator trades internal fragmentation for fast allocation and deterministic merging, closely resembling kernel-level allocators.
 
 6. Cache Simulation
 6.1 Cache Model
@@ -102,7 +106,7 @@ Each cache level supports:
 
 Configurable total size
 
-Configurable block size
+Configurable block (cache line) size
 
 Configurable associativity (direct-mapped or set-associative)
 
@@ -116,11 +120,11 @@ LRU (optional) – implemented
 
 LFU – not implemented
 
-Replacement is performed at the cache-set level.
+Replacement decisions are made at the cache-set level.
 
 6.3 Multilevel Cache Behavior
 
-On memory access:
+On a memory access:
 
 L1 cache is checked first
 
@@ -128,7 +132,7 @@ On L1 miss, access propagates to L2
 
 On L2 miss, data is fetched from simulated main memory
 
-On L2 hit, data is promoted to L1
+On L2 hit, the block is promoted to L1
 
 This models miss penalty propagation between cache levels.
 
@@ -140,7 +144,8 @@ Cache hits per level
 
 Cache misses per level
 
-Hit ratio is derivable from these values but not explicitly printed.
+Only CPU-initiated accesses are counted.
+Internal cache fill operations do not affect statistics, matching real hardware behavior.
 
 7. Virtual Memory & Paging
 
@@ -154,7 +159,9 @@ Virtual address split into page number and offset
 
 Page table with valid bit and frame mapping
 
-Physical memory divided into frames
+Physical memory conceptually divided into frames
+
+Virtual memory is an address translation mechanism, not a storage system.
 
 7.1 Page Fault Handling
 
@@ -166,11 +173,13 @@ Otherwise, a victim page is selected using FIFO or LRU
 
 The victim page is evicted
 
-The required page is loaded into memory
+The required page is loaded
 
 Page table entries are updated
 
-7.2 Statistics
+Disk access is symbolically represented via page fault counting.
+
+7.2 Virtual Memory Statistics
 
 The simulator tracks:
 
@@ -178,22 +187,22 @@ Page hits
 
 Page faults
 
-Disk access latency is symbolically represented by page fault counting.
+These values represent demand paging behavior.
 
-7.3 Integration with Cache (Conceptual)
+7.3 Integration with Cache (Actual Implementation)
 
-The intended execution order is:
+The simulator enforces the following execution order during memory access:
 
 Virtual Address → Page Table → Physical Address → Cache → Physical Memory
 
 
-In the current implementation:
+This order is implemented through a unified access command, which:
 
-Virtual memory translation and cache access are implemented as separate modules
+Performs virtual-to-physical address translation
 
-The execution order is conceptually documented, but not enforced through a single unified command
+Propagates the physical address through the cache hierarchy
 
-This design allows independent testing of each subsystem.
+Allocation subsystems remain independent and do not implicitly trigger paging or cache activity.
 
 8. Statistics & Metrics
 
@@ -213,10 +222,10 @@ Cache hits and misses
 
 Page hits and page faults
 
-Internal fragmentation is zero in the linked-list allocator since allocations are exact-sized.
+Internal fragmentation is zero in the linear allocator because allocations are exact-sized.
 
 9. Command-Line Interface Summary
-Memory Allocation
+Linear Memory Allocation
 init memory <size>
 set allocator first|best|worst
 malloc <size>
@@ -225,7 +234,7 @@ dump
 stats
 
 Buddy Allocator
-buddy init <total> <min_block>
+buddy init <total_memory> <min_block_size>
 buddy alloc <size>
 buddy free <address>
 buddy dump
@@ -233,12 +242,11 @@ buddy dump
 Cache
 cache init l1 <size> <block> <assoc>
 cache init l2 <size> <block> <assoc>
-cache access <physical_address>
 cache stats
 
 Virtual Memory
-vm init <memory> <page_size>
-vm access <virtual_address>
+vm init <virtual_memory_size> <page_size>
+access <virtual_address>
 vm stats
 
 10. Limitations
@@ -247,12 +255,14 @@ No TLB simulation
 
 No multi-process page tables
 
-No automatic VM–cache execution chaining
-
 No write-back cache modeling
 
 No real timing or latency simulation
 
+No explicit disk storage model
+
+These limitations are intentional.
+
 11. Conclusion
 
-This project provides a modular, extensible simulator for core OS memory management concepts. It accurately models allocation strategies, fragmentation behavior, paging, and multilevel cache behavior, while maintaining clear separation between components and policies.
+This project provides a modular and accurate simulator for core OS memory management concepts. It correctly models allocation strategies, fragmentation behavior, buddy allocation, paging, and multilevel cache behavior, while maintaining clear separation between subsystems and enforcing a realistic execution order during memory access.
