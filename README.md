@@ -62,7 +62,7 @@ free <id>
 dump
 stats
 
-# uddy Allocator
+# buddy Allocator
 buddy init <total_memory> <min_block_size>
 buddy alloc <size>
 buddy free <address>

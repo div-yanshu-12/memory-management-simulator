@@ -1,0 +1,159 @@
+1. Linear Physical Memory (First / Best / Worst Fit)
+Example output
+[0x0 - 0x63] USED (id=1)
+[0x64 - 0x12b] USED (id=2)
+[0x12c - 0x3ff] FREE
+
+What this means
+Memory is byte-addressed
+Addresses shown are offsets, not real RAM addresses
+Each line represents a contiguous physical memory block
+
+Part	Meaning
+o/p os stats is:
+0x0 - 0x63	Block start and end address
+USED	Block is allocated
+id=1	Allocation identifier
+FREE	Block is available
+Fragmentation example
+External fragmentation: 12.14%
+
+
+This means:
+Free memory exists 
+But it is split into multiple non-contiguous blocks
+Large allocations may fail even if total free memory is sufficient
+This demonstrates external fragmentation.
+
+2. Best Fit vs Worst Fit Output (Why they differ)
+Best Fit example
+[0x0 - 0x59] USED (id=3)
+[0x5a - 0x63] FREE
+
+Explanation
+
+Best fit chooses the smallest free block that can satisfy the request
+Leaves small leftover fragments
+Reduces wasted space inside blocks
+Can increase fragmentation
+
+Worst Fit example
+[0x0 - 0x63] FREE
+[0x64 - 0x12b] USED (id=2)
+[0x12c - 0x185] USED (id=3)
+
+
+Explanation
+Worst fit allocates from the largest free block
+Keeps large free regions intact
+Trades traversal cost for better large allocations later
+
+3. Buddy Allocator Output (MOST IMPORTANT TO EXPLAIN)
+Example output
+Buddy Free Lists:
+Order 2 (size=128): 128
+Order 3 (size=256): 256
+Order 4 (size=512): 512
+
+What this means
+Buddy allocator manages memory in power-of-two blocks.
+
+Order	Block size
+Order 0	32 bytes
+Order 1	64 bytes
+Order 2	128 bytes
+Order 3	256 bytes
+Order 4	512 bytes
+Example: buddy alloc 100
+
+Why allocation is 128 bytes:
+100 is rounded up to nearest power of two
+That is 128
+Allocator splits larger blocks recursively
+So:
+Order 2 (size=128): allocated
+Example: freeing buddies
+Order 5 (size=1024): 0
+
+Explanation
+
+Two buddy blocks were freed
+They had the same size
+Their addresses differed by exactly their size
+They were merged recursively
+Result: one large free block
+This demonstrates fast coalescing.
+
+4. Cache Output (L1 / L2)
+Example output
+L1 Cache:
+  Hits: 1
+  Misses: 1
+L2 Cache:
+  Hits: 0
+  Misses: 1
+
+What this means
+Event	Explanation
+L1 Miss	Data not in fastest cache
+L2 Miss	Data not in slower cache
+RAM access	Data fetched from memory
+Cache fill	Data inserted into caches
+
+On second access:
+L1 Hit increases
+Shows temporal locality
+Block size behavior
+access 0
+access 64
+
+Why second access is a hit:
+Cache line size = 64 bytes
+Address 0–63 are in the same block
+This shows spatial locality
+
+5. Virtual Memory Output
+Example output
+Accessed VA 0 → PA 0
+
+What this means
+VA = Virtual Address
+PA = Physical Address
+Page table translated VA to PA
+This is address translation, not allocation.
+
+Page fault example
+Page hits: 1
+Page faults: 2
+
+Explanation
+First access to a page → page fault
+Page is loaded into memory
+Re-access → page hit
+Demonstrates demand paging
+No page is loaded until it is accessed.
+
+6. Unified Execution Model
+
+When you run:
+access 0
+
+What happens internally:
+
+Virtual Address
+→ Page Table Lookup
+→ Physical Address
+→ L1 Cache
+→ L2 Cache
+→ Memory
+
+7. Reset Behavior (init commands)
+Example
+init memory 1024
+or
+vm init 16384 4096
+
+Meaning
+Old state is destroyed
+New subsystem state created
+Just like restarting a process or kernel component
