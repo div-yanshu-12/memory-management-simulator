@@ -1,15 +1,51 @@
 # Virtual Memory Tests – Paging
 
 vm init 16384 4096
-vm access 0
-vm access 4096
-vm access 0
+cache init l1 32768 64 4
+cache init l2 262144 64 8
+access 0
 vm stats
+access 0
+vm stats
+access 4096
+vm stats
+cache stats
+access 0
+cache stats
+access 64
+cache stats
+
 
 Expected:
+Virtual memory initialized
+Accessed VA 0 → PA 0
+Page hits: 0
+Page faults: 1
+Page hits: 1
+Page faults: 1
+Page hits: 1
+Page faults: 2
+L1 Cache:
+  Hits: 0
+  Misses: 1
+L2 Cache:
+  Hits: 0
+  Misses: 1
+L1 Cache:
+  Hits: 1
+  Misses: 1
+L2 Cache:
+  Hits: 0
+  Misses: 1
+L1 Hits increases (same cache line)
 
-* First access (0): Page fault
-* Second access (4096): Page fault
-* Third access (0): Page hit
-* Page fault count = 2
-* Page hit count = 1
+------------------------------------------
+
+access 8192
+access 0
+vm stats
+cache stats
+
+Expected:
+Page faults increment only on first access
+Cache hits dominate on reuse

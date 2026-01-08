@@ -7,23 +7,26 @@ CacheHierarchy::CacheHierarchy(Cache* l1, Cache* l2)
     : L1(l1), L2(l2) {}
 
 bool CacheHierarchy::access(size_t addr) {
-    // Try L1
-    if (L1->access(addr)) {
+    // CPU → L1
+    if (L1->access(addr, true)) {
         return true; // L1 hit
     }
 
-    // L1 miss → Try L2
-    if (L2->access(addr)) {
-        // L2 hit → bring block into L1
-        L1->access(addr);
+    // L1 miss → L2
+    if (L2->access(addr, true)) {
+        // Fill L1, but DO NOT count stats
+        L1->access(addr, false);
         return true;
     }
 
     // Miss in both → fetch from memory
-    L2->access(addr); // fill L2
-    L1->access(addr); // fill L1
+    // Fill caches WITHOUT counting stats
+    L2->access(addr, false);
+    L1->access(addr, false);
+
     return false;
 }
+
 
 void CacheHierarchy::print_stats() const {
     cout << "L1 Cache:\n";

@@ -26,7 +26,7 @@ size_t Cache::get_tag(size_t addr) const {
     return block_addr / num_sets;
 }
 
-bool Cache::access(size_t physical_addr) {
+bool Cache::access(size_t physical_addr, bool count_stats) {
     timer++;
     size_t set_idx = get_set_index(physical_addr);
     size_t tag = get_tag(physical_addr);
@@ -34,13 +34,13 @@ bool Cache::access(size_t physical_addr) {
     // Check for HIT
     for (auto &line : sets[set_idx]) {
         if (line.valid && line.tag == tag) {
-            hits++;
+           if (count_stats) hits++;
             return true;
         }
     }
 
     // MISS: replace FIFO
-    misses++;
+    if (count_stats) misses++;
     auto &set = sets[set_idx];
 
     auto it = min_element(set.begin(), set.end(),

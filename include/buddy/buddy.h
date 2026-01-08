@@ -21,6 +21,9 @@ public:
 
     // Dump free lists for debugging and demonstration
     void dump() const;
+    size_t get_total_memory() const;
+    size_t get_free_memory() const;
+    size_t get_used_memory() const;
 
 private:
     size_t total_memory;      // Total managed memory (power of two)

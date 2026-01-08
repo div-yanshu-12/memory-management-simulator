@@ -1,16 +1,54 @@
 # Allocator Tests
 
 init memory 1024
-set allocator first
+set allocator best
 malloc 100
 malloc 200
 free 1
+malloc 90
 dump
-stats
 
 Expected:
-*One free block of 100
-*One used block of 200
-*One free block of 724
-*Used memory = 200
-*External fragmentation > 0
+[0x0 - 0x59] USED (id=3)
+[0x5a - 0x63] FREE
+[0x64 - 0x12b] USED (id=2)
+[0x12c - 0x3ff] FREE
+--------------------------------------------------
+
+init memory 1024
+set allocator worst
+malloc 100
+malloc 200
+free 1
+malloc 90
+dump
+
+Expected:
+[0x0 - 0x63] FREE
+[0x64 - 0x12b] USED (id=2)
+[0x12c - 0x185] USED (id=3)
+[0x186 - 0x3ff] FREE
+--------------------------------------------------------
+
+buddy init 1024 32
+buddy alloc 100
+buddy dump
+buddy alloc 100
+buddy dump
+buddy free 0
+buddy free 128
+buddy dump
+
+Expected:
+Buddy allocator initialized
+buddy alloc 100
+Buddy allocated at address 0
+Order 2 (size=128): 128
+Order 3 (size=256): 256
+Order 4 (size=512): 512
+Buddy allocated at address 128
+Order 3 (size=256): 256
+Order 4 (size=512): 512
+Order 5 (size=1024): 0
+
+

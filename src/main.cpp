@@ -21,6 +21,8 @@ int main() {
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
 
+    cout.setf(std::ios::unitbuf); 
+
     string line;
     BuddyAllocator* buddy = nullptr;
 
@@ -33,17 +35,16 @@ int main() {
     cout << "Type commands, 'exit' to quit.\n";
 
     while (true) {
-        cout << "> ";
+        cout << "> " << flush; 
+        
         if (!getline(cin, line)) break;
+        if (line.empty()) continue;
 
         stringstream ss(line);
         string cmd;
         ss >> cmd;
 
-        // EXIT
-        if (cmd == "exit") {
-            break;
-        }
+        if (cmd == "exit") break;
 
         // INITIALIZE PHYSICAL MEMORY
         // init memory <size>
@@ -144,6 +145,23 @@ int main() {
             else if (sub == "dump") {
                 buddy->dump();
             }
+            else if (sub == "stats") {
+                if (!buddy) {
+                    cout << "Buddy allocator not initialized\n";
+                } else {
+                    size_t total = buddy->get_total_memory();
+                    size_t used = buddy->get_used_memory();
+                    size_t free = buddy->get_free_memory();
+
+                    cout << "Buddy Allocator Stats:\n";
+                    cout << "Total memory: " << total << " bytes\n";
+                    cout << "Used memory: " << used << " bytes\n";
+                    cout << "Free memory: " << free << " bytes\n";
+
+                    double util = total ? (double)used / total * 100.0 : 0.0;
+                    cout << "Memory utilization: " << util << "%\n";
+                }
+            }
 
         }
         // VIRTUAL MEMORY
@@ -233,6 +251,30 @@ int main() {
                 } else {
                     hierarchy->print_stats();
                 }
+            }
+        }
+
+        // UNIFIED MEMORY ACCESS (VM → CACHE → MEMORY)
+        // access <virtual_address>
+        else if (cmd == "access") {
+            size_t vaddr;
+            ss >> vaddr;
+
+            if (!vm) {
+                cout << "Virtual memory not initialized\n";
+            }
+            else if (!hierarchy) {
+                cout << "Cache hierarchy not initialized\n";
+            }
+            else {
+                // Step 1: Virtual → Physical (Paging)
+                size_t physical_addr = vm->access(vaddr, true);
+
+                // Step 2: Physical → Cache hierarchy
+                hierarchy->access(physical_addr);
+
+                cout << "Accessed VA " << vaddr
+                    << " → PA " << physical_addr << '\n';
             }
         }
 

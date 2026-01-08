@@ -8,7 +8,7 @@ using namespace std;
  - Evicts the cache line that was accessed least recently
 */
 
-bool Cache::access(size_t physical_addr) {
+bool Cache::access(size_t physical_addr, bool count_stats) {
     timer++;
     size_t set_idx = get_set_index(physical_addr);
     size_t tag = get_tag(physical_addr);
@@ -16,14 +16,14 @@ bool Cache::access(size_t physical_addr) {
     // HIT check
     for (auto &line : sets[set_idx]) {
         if (line.valid && line.tag == tag) {
-            hits++;
+            if (count_stats) hits++;
             line.timestamp = timer; // Update recency
             return true;
         }
     }
 
     // MISS
-    misses++;
+    if (count_stats) misses++;
     auto &set = sets[set_idx];
 
     auto it = min_element(set.begin(), set.end(),

@@ -7,12 +7,19 @@ cache access 128
 cache stats
 
 Expected:
+L1 cache initialized
+L2 cache initialized
 
-* First access:
-  - L1 MISS
-  - L2 MISS
-* Second access:
-  - L1 HIT
-* Cache statistics reflect:
-  - L1: 1 hit, 1 miss
-  - L2: 0 hits, 1 miss
+L1 Cache:
+  Hits: 0
+  Misses: 1
+L2 Cache:
+  Hits: 0
+  Misses: 1
+
+L1 Cache:
+  Hits: 1
+  Misses: 1
+L2 Cache:
+  Hits: 0
+  Misses: 1

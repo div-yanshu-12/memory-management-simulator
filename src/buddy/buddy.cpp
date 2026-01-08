@@ -106,6 +106,24 @@ void BuddyAllocator::free_block(size_t addr) {
     free_lists[order].push_back(addr);
 }
 
+size_t BuddyAllocator::get_total_memory() const {
+    return total_memory;
+}
+
+size_t BuddyAllocator::get_free_memory() const {
+    size_t free_mem = 0;
+    for (size_t order = 0; order <= max_order; order++) {
+        size_t block_size = order_to_size(order);
+        free_mem += free_lists[order].size() * block_size;
+    }
+    return free_mem;
+}
+
+size_t BuddyAllocator::get_used_memory() const {
+    return total_memory - get_free_memory();
+}
+
+
 /*
  Dump free lists for visualization
 */

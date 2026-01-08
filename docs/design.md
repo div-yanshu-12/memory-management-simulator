@@ -1,3 +1,8 @@
+Please note, the simulator separates allocation, virtual memory, and caching into independent subsystems to reflect real OS architecture. These subsystems interact only during memory access, which is modeled via a unified access command that performs address translation followed by cache lookup
+
+.......
+
+
 1. Overview
 
 This project implements a user-space simulator for Operating System memory management concepts. It models physical memory allocation, fragmentation behavior, cache memory, and virtual memory using paging.

@@ -18,7 +18,7 @@ public:
 
     // Access a physical address
     // Returns true on HIT, false on MISS
-    bool access(size_t physical_addr);
+    bool access(size_t physical_addr, bool count_stats = true);
 
     // Statistics
     size_t get_hits() const;
